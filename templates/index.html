@@ -1,169 +1,28 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Spotify Top 1000 Tracks</title>
-  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
-  <style>
-    /* Reset & base */
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #1DB954, #191414);
-      color: #fff;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem;
-    }
-    h1 {
-      margin-bottom: 1rem;
-      font-weight: 700;
-      text-shadow: 0 0 10px rgba(0,0,0,0.7);
-    }
-    /* Form styles */
-    form#track-form {
-      background: rgba(0,0,0,0.6);
-      padding: 20px;
-      border-radius: 12px;
-      max-width: 700px;
-      width: 100%;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
-      margin-bottom: 2rem;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.5);
-    }
-    form input, form button {
-      padding: 10px 14px;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      outline: none;
-      transition: background-color 0.3s ease;
-    }
-    form input {
-      background: #121212;
-      color: #fff;
-    }
-    form input::placeholder {
-      color: #aaa;
-    }
-    form input:focus {
-      background: #1ed760;
-      color: #000;
-    }
-    form button {
-      background: #1DB954;
-      color: #fff;
-      cursor: pointer;
-      font-weight: 600;
-      grid-column: 1 / -1;
-      box-shadow: 0 4px 15px #1ed760;
-    }
-    form button:hover {
-      background: #17c94f;
-      box-shadow: 0 6px 20px #17c94f;
-    }
-
-    /* Track list styles */
-    ul#track-list {
-      list-style: none;
-      padding: 0;
-      max-width: 700px;
-      width: 100%;
-    }
-    ul#track-list li {
-      background: rgba(0,0,0,0.6);
-      margin-bottom: 12px;
-      padding: 14px 20px;
-      border-radius: 10px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
-      transition: background-color 0.3s ease;
-    }
-    ul#track-list li:hover {
-      background: rgba(29, 185, 84, 0.8);
-      box-shadow: 0 8px 16px rgba(29, 185, 84, 0.7);
-    }
-    ul#track-list li strong {
-      font-size: 1.1rem;
-      flex-basis: 100%;
-      margin-bottom: 6px;
-      text-shadow: 0 0 6px rgba(0,0,0,0.8);
-    }
-    ul#track-list li div.info {
-      flex-grow: 1;
-      font-size: 0.9rem;
-      margin-right: 12px;
-      min-width: 180px;
-      color: #ddd;
-    }
-    ul#track-list li a {
-      color: #1DB954;
-      margin-right: 12px;
-      text-decoration: none;
-      font-weight: 600;
-    }
-    ul#track-list li a:hover {
-      text-decoration: underline;
-    }
-    ul#track-list li button {
-      background: #e0245e;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 8px;
-      color: white;
-      cursor: pointer;
-      font-weight: 600;
-      box-shadow: 0 4px 10px #e0245e;
-      transition: background-color 0.3s ease;
-    }
-    ul#track-list li button:hover {
-      background: #b31c4a;
-      box-shadow: 0 6px 14px #b31c4a;
-    }
-
-    /* Responsive */
-    @media (max-width: 480px) {
-      form#track-form {
-        grid-template-columns: 1fr;
-      }
-      ul#track-list li {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      ul#track-list li div.info {
-        margin: 8px 0;
-      }
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <title>Domestic Residence Permissions</title>
 </head>
 <body>
-  <h1>Spotify Top 1000 Tracks</h1>
+    <h1>Domestic Residence Permissions</h1>
+    <ul id="permissions-list"></ul>
 
-  <form id="track-form">
-    <input type="text" id="id" placeholder="ID (Spotify)" required />
-    <input type="text" id="track_name" placeholder="Track Name" required />
-    <input type="text" id="artist" placeholder="Artist" required />
-    <input type="text" id="album" placeholder="Album" />
-    <input type="text" id="release_date" placeholder="Release Date (YYYY-MM-DD)" />
-    <input type="number" id="popularity" placeholder="Popularity" />
-    <input type="url" id="spotify_url" placeholder="Spotify URL" />
-    <input type="number" step="0.01" id="duration_min" placeholder="Duration (minutes)" />
-    <button type="submit">Add / Update Track</button>
-  </form>
+    <script>
+        async function fetchPermissions() {
+            const res = await fetch('/api/permissions');
+            const permissions = await res.json();
+            const list = document.getElementById('permissions-list');
+            list.innerHTML = '';
+            permissions.forEach(p => {
+                const li = document.createElement('li');
+                li.textContent = `${p.field1} - ${p.field2} - ${p.field3}`;
+                list.appendChild(li);
+            });
+        }
 
-  <ul id="track-list"></ul>
-
-  <script src="{{ url_for('static', filename='main.js') }}"></script>
+        fetchPermissions();
+    </script>
 </body>
 </html>
 
