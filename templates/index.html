@@ -1,28 +1,226 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>Domestic Residence Permissions</title>
+  <meta charset="UTF-8" />
+  <title>Spotify Top Tracks Manager</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body { padding: 20px; }
+    table td, table th { vertical-align: middle; }
+  </style>
 </head>
 <body>
-    <h1>Domestic Residence Permissions</h1>
-    <ul id="permissions-list"></ul>
+  <div class="container">
+    <h1 class="mb-4">Spotify Top Tracks Manager</h1>
 
-    <script>
-        async function fetchPermissions() {
-            const res = await fetch('/api/permissions');
-            const permissions = await res.json();
-            const list = document.getElementById('permissions-list');
-            list.innerHTML = '';
-            permissions.forEach(p => {
-                const li = document.createElement('li');
-                li.textContent = `${p.field1} - ${p.field2} - ${p.field3}`;
-                list.appendChild(li);
-            });
+    <!-- Form to add/edit tracks -->
+    <div class="card mb-4">
+      <div class="card-header">Add / Edit Track</div>
+      <div class="card-body">
+        <form id="track-form">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label for="track-id" class="form-label">Track ID</label>
+              <input type="text" id="track-id" class="form-control" required />
+              <div class="form-text">Unique Spotify Track ID</div>
+            </div>
+            <div class="col-md-3">
+              <label for="track-name" class="form-label">Track Name</label>
+              <input type="text" id="track-name" class="form-control" required />
+            </div>
+            <div class="col-md-3">
+              <label for="artist" class="form-label">Artist</label>
+              <input type="text" id="artist" class="form-control" required />
+            </div>
+            <div class="col-md-3">
+              <label for="album" class="form-label">Album</label>
+              <input type="text" id="album" class="form-control" />
+            </div>
+          </div>
+
+          <div class="row g-3 mt-2">
+            <div class="col-md-2">
+              <label for="release-date" class="form-label">Release Date</label>
+              <input type="text" id="release-date" class="form-control" placeholder="YYYY-MM-DD" />
+            </div>
+            <div class="col-md-2">
+              <label for="popularity" class="form-label">Popularity</label>
+              <input type="number" id="popularity" class="form-control" min="0" max="100" />
+            </div>
+            <div class="col-md-4">
+              <label for="spotify-url" class="form-label">Spotify URL</label>
+              <input type="url" id="spotify-url" class="form-control" placeholder="https://..." />
+            </div>
+            <div class="col-md-2">
+              <label for="duration-min" class="form-label">Duration (min)</label>
+              <input type="number" step="0.01" id="duration-min" class="form-control" />
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="submit" id="submit-btn" class="btn btn-primary w-100">Add Track</button>
+            </div>
+          </div>
+        </form>
+        <div id="message" class="mt-2"></div>
+      </div>
+    </div>
+
+    <!-- Table to display tracks -->
+    <div>
+      <h2>Track List</h2>
+      <table class="table table-striped" id="tracks-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Track Name</th>
+            <th>Artist</th>
+            <th>Album</th>
+            <th>Release Date</th>
+            <th>Popularity</th>
+            <th>Spotify URL</th>
+            <th>Duration (min)</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Tracks will be dynamically inserted here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('track-form');
+    const messageDiv = document.getElementById('message');
+    const submitBtn = document.getElementById('submit-btn');
+    const tracksTableBody = document.querySelector('#tracks-table tbody');
+    let editingTrackId = null;
+
+    // Load all tracks and display
+    async function loadTracks() {
+      const res = await fetch('/api/tracks');
+      const tracks = await res.json();
+      tracksTableBody.innerHTML = '';
+      tracks.forEach(track => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${track.id}</td>
+          <td>${track.track_name}</td>
+          <td>${track.artist}</td>
+          <td>${track.album || ''}</td>
+          <td>${track.release_date || ''}</td>
+          <td>${track.popularity || ''}</td>
+          <td><a href="${track.spotify_url || '#'}" target="_blank">${track.spotify_url ? 'Link' : ''}</a></td>
+          <td>${track.duration_min || ''}</td>
+          <td>
+            <button class="btn btn-sm btn-warning edit-btn">Edit</button>
+            <button class="btn btn-sm btn-danger delete-btn">Delete</button>
+          </td>
+        `;
+        // Edit button
+        row.querySelector('.edit-btn').onclick = () => {
+          editingTrackId = track.id;
+          fillForm(track);
+        };
+        // Delete button
+        row.querySelector('.delete-btn').onclick = () => {
+          if (confirm(`Delete track "${track.track_name}"?`)) {
+            deleteTrack(track.id);
+          }
+        };
+        tracksTableBody.appendChild(row);
+      });
+    }
+
+    // Fill form for editing
+    function fillForm(track) {
+      document.getElementById('track-id').value = track.id;
+      document.getElementById('track-id').disabled = true;
+      document.getElementById('track-name').value = track.track_name;
+      document.getElementById('artist').value = track.artist;
+      document.getElementById('album').value = track.album || '';
+      document.getElementById('release-date').value = track.release_date || '';
+      document.getElementById('popularity').value = track.popularity || '';
+      document.getElementById('spotify-url').value = track.spotify_url || '';
+      document.getElementById('duration-min').value = track.duration_min || '';
+      submitBtn.textContent = 'Update Track';
+      messageDiv.textContent = '';
+    }
+
+    // Clear form to add new track
+    function clearForm() {
+      form.reset();
+      document.getElementById('track-id').disabled = false;
+      editingTrackId = null;
+      submitBtn.textContent = 'Add Track';
+      messageDiv.textContent = '';
+    }
+
+    // Show message
+    function showMessage(msg, isError = false) {
+      messageDiv.textContent = msg;
+      messageDiv.style.color = isError ? 'red' : 'green';
+      setTimeout(() => messageDiv.textContent = '', 3000);
+    }
+
+    // Create or update track on form submit
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const trackData = {
+        id: document.getElementById('track-id').value.trim(),
+        track_name: document.getElementById('track-name').value.trim(),
+        artist: document.getElementById('artist').value.trim(),
+        album: document.getElementById('album').value.trim(),
+        release_date: document.getElementById('release-date').value.trim(),
+        popularity: parseInt(document.getElementById('popularity').value) || 0,
+        spotify_url: document.getElementById('spotify-url').value.trim(),
+        duration_min: parseFloat(document.getElementById('duration-min').value) || 0
+      };
+
+      try {
+        let res;
+        if (editingTrackId) {
+          // Update
+          res = await fetch(`/api/tracks/${editingTrackId}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(trackData)
+          });
+          if (!res.ok) throw await res.json();
+          showMessage('Track updated successfully.');
+        } else {
+          // Create
+          res = await fetch('/api/tracks', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(trackData)
+          });
+          if (!res.ok) {
+            const error = await res.json();
+            throw new Error(error.error || 'Failed to add track.');
+          }
+          showMessage('Track added successfully.');
         }
+        clearForm();
+        loadTracks();
+      } catch (err) {
+        showMessage(err.message || 'Error occurred.', true);
+      }
+    };
 
-        fetchPermissions();
-    </script>
+    // Delete track by ID
+    async function deleteTrack(id) {
+      const res = await fetch(`/api/tracks/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        showMessage('Track deleted.');
+        if (editingTrackId === id) clearForm();
+        loadTracks();
+      } else {
+        showMessage('Failed to delete track.', true);
+      }
+    }
+
+    // Initial load
+    loadTracks();
+  </script>
 </body>
 </html>
-
