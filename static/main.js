@@ -7,12 +7,6 @@ const sortSelect = document.getElementById('sort-select');
 const paginationDiv = document.getElementById('pagination');
 
 let editingId = null;
-let topArtistsChartInstance = null;
-let genreChartInstance = null;
-
-let currentPage = 1;
-let totalPages = 1;
-const perPage = 10;
 
 async function fetchTracks(page = 1) {
   const search = searchInput.value.trim();
@@ -20,7 +14,7 @@ async function fetchTracks(page = 1) {
 
   const params = new URLSearchParams({
     page,
-    per_page: perPage,
+    per_page: 10,
     sort,
   });
   if (search) params.append('search', search);
@@ -30,7 +24,7 @@ async function fetchTracks(page = 1) {
     if (!res.ok) throw new Error('Failed to load tracks.');
     const data = await res.json();
     renderTable(data.tracks);
-    setupPagination(data.page, data.pages);
+    setupPagination(data.meta.page, data.meta.pages);
   } catch (err) {
     message.style.color = 'red';
     message.textContent = err.message;
@@ -94,9 +88,7 @@ async function deleteTrack(id) {
     message.style.color = 'green';
     message.textContent = 'Track deleted successfully!';
     clearForm();
-    fetchTracks(currentPage);
-    drawTopArtistsChart();
-    drawGenreChart();
+    fetchTracks(); // Atualiza lista após exclusão
   } catch {
     message.style.color = 'red';
     message.textContent = 'Failed to delete track.';
@@ -138,6 +130,24 @@ form.addEventListener('submit', async e => {
     message.style.color = 'green';
     message.textContent = editingId ? 'Track updated successfully!' : 'Track added successfully!';
     clearForm();
+    fetchTracks(); // Atualiza lista após salvar
+  } catch (err) {
+    message.style.color = 'red';
+    message.textContent = err.message;
+  }
+});
 
+// Função simples para paginação, se precisar você pode expandir
+function setupPagination(currentPage, totalPages) {
+  paginationDiv.innerHTML = '';
+  for(let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    btn.disabled = i === currentPage;
+    btn.addEventListener('click', () => fetchTracks(i));
+    paginationDiv.appendChild(btn);
+  }
+}
 
-
+// Carrega a lista inicial
+fetchTracks();
