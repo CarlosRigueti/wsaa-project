@@ -2,225 +2,454 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Spotify Top Tracks Manager</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WSAA Project - Spotify Track Manager</title>
   <style>
-    body { padding: 20px; }
-    table td, table th { vertical-align: middle; }
+    /* (Your existing CSS from the snippet) */
+    /* Basic reset & styling */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #1DB954;
+      color: #222;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 0 1rem;
+    }
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background-color: #14833b;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      z-index: 1000;
+      border-bottom-left-radius: 12px;
+      border-bottom-right-radius: 12px;
+    }
+    header h1 { font-weight: 700; font-size: 1.5rem; letter-spacing: 1px; }
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin-left: 1.5rem;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+    nav a:hover { color: #a1d99b; }
+    main {
+      flex-grow: 1;
+      margin-top: 100px;
+      max-width: 960px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 2rem;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    h2 { margin-bottom: 1rem; color: #14833b; }
+    /* Search & sort controls */
+    #search-sort {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    #search-input {
+      flex: 1 1 300px;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    #sort-select {
+      padding: 0.5rem;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    /* Pagination */
+    #pagination {
+      margin-top: 1rem;
+      text-align: center;
+    }
+    #pagination button {
+      margin: 0 3px;
+      padding: 5px 10px;
+      background: #1DB954;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s;
+    }
+    #pagination button:disabled {
+      background: #a5d6a7;
+      cursor: default;
+    }
+    #pagination button:hover:not(:disabled) {
+      background: #14833b;
+    }
+    /* Form styling */
+    form {
+      padding: 1.5rem;
+      border-radius: 8px;
+      background: #f9f9f9;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(20,131,59,0.2);
+    }
+    form .form-group { margin-bottom: 1rem; }
+    form label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+      color: #14833b;
+    }
+    form input[type="text"],
+    form input[type="url"],
+    form input[type="number"] {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+    form input[type="text"]:focus,
+    form input[type="url"]:focus,
+    form input[type="number"]:focus {
+      outline: none;
+      border-color: #1DB954;
+      box-shadow: 0 0 6px #1DB954aa;
+    }
+    form button {
+      background-color: #1DB954;
+      color: white;
+      font-weight: 700;
+      padding: 0.7rem 1.2rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    form button:hover { background-color: #14833b; }
+    #message {
+      font-weight: 600;
+      margin-top: 1rem;
+      min-height: 24px;
+      color: #14833b;
+    }
+    /* Tracks table styling */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #f9f9f9;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(20,131,59,0.15);
+    }
+    thead { background-color: #14833b; color: white; }
+    th, td {
+      padding: 0.8rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      font-size: 0.9rem;
+      vertical-align: middle;
+    }
+    tbody tr:hover { background-color: #e5f6df; }
+    .btn {
+      padding: 0.3rem 0.7rem;
+      font-size: 0.85rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+      margin-right: 0.3rem;
+    }
+    .btn-edit {
+      background-color: #1DB954;
+      color: white;
+    }
+    .btn-edit:hover { background-color: #14833b; }
+    .btn-delete {
+      background-color: #d32f2f;
+      color: white;
+    }
+    .btn-delete:hover { background-color: #a02121; }
+    /* Responsive */
+    @media (max-width: 600px) {
+      main { padding: 1rem; }
+      table, thead, tbody, th, td, tr { display: block; }
+      thead tr { display: none; }
+      tbody tr {
+        margin-bottom: 1rem;
+        background: #f9f9f9;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(20,131,59,0.1);
+      }
+      tbody td {
+        padding-left: 50%;
+        position: relative;
+        border: none;
+        border-bottom: 1px solid #eee;
+      }
+      tbody td::before {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-weight: 700;
+        white-space: nowrap;
+        color: #14833b;
+      }
+      tbody td:nth-of-type(1)::before { content: "ID"; }
+      tbody td:nth-of-type(2)::before { content: "Track"; }
+      tbody td:nth-of-type(3)::before { content: "Artist"; }
+      tbody td:nth-of-type(4)::before { content: "Album"; }
+      tbody td:nth-of-type(5)::before { content: "Release Date"; }
+      tbody td:nth-of-type(6)::before { content: "Popularity"; }
+      tbody td:nth-of-type(7)::before { content: "Spotify URL"; }
+      tbody td:nth-of-type(8)::before { content: "Duration"; }
+      tbody td:nth-of-type(9)::before { content: "Actions"; }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1 class="mb-4">Spotify Top Tracks Manager</h1>
-
-    <!-- Form to add/edit tracks -->
-    <div class="card mb-4">
-      <div class="card-header">Add / Edit Track</div>
-      <div class="card-body">
-        <form id="track-form">
-          <div class="row g-3">
-            <div class="col-md-3">
-              <label for="track-id" class="form-label">Track ID</label>
-              <input type="text" id="track-id" class="form-control" required />
-              <div class="form-text">Unique Spotify Track ID</div>
-            </div>
-            <div class="col-md-3">
-              <label for="track-name" class="form-label">Track Name</label>
-              <input type="text" id="track-name" class="form-control" required />
-            </div>
-            <div class="col-md-3">
-              <label for="artist" class="form-label">Artist</label>
-              <input type="text" id="artist" class="form-control" required />
-            </div>
-            <div class="col-md-3">
-              <label for="album" class="form-label">Album</label>
-              <input type="text" id="album" class="form-control" />
-            </div>
-          </div>
-
-          <div class="row g-3 mt-2">
-            <div class="col-md-2">
-              <label for="release-date" class="form-label">Release Date</label>
-              <input type="text" id="release-date" class="form-control" placeholder="YYYY-MM-DD" />
-            </div>
-            <div class="col-md-2">
-              <label for="popularity" class="form-label">Popularity</label>
-              <input type="number" id="popularity" class="form-control" min="0" max="100" />
-            </div>
-            <div class="col-md-4">
-              <label for="spotify-url" class="form-label">Spotify URL</label>
-              <input type="url" id="spotify-url" class="form-control" placeholder="https://..." />
-            </div>
-            <div class="col-md-2">
-              <label for="duration-min" class="form-label">Duration (min)</label>
-              <input type="number" step="0.01" id="duration-min" class="form-control" />
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-              <button type="submit" id="submit-btn" class="btn btn-primary w-100">Add Track</button>
-            </div>
-          </div>
-        </form>
-        <div id="message" class="mt-2"></div>
+<header>
+  <h1>WSAA Project</h1>
+  <nav>
+    <a href="#form">Add / Edit Track</a>
+    <a href="#list">Track List</a>
+  </nav>
+</header>
+<main>
+  <section id="form" aria-label="Form to add or edit Spotify track">
+    <h2>Manage Spotify Track</h2>
+    <form id="track-form" novalidate>
+      <input type="hidden" id="track-id" />
+      <div class="form-group">
+        <label for="track-name">Track Name</label>
+        <input type="text" id="track-name" required />
       </div>
-    </div>
+      <div class="form-group">
+        <label for="artist">Artist</label>
+        <input type="text" id="artist" required />
+      </div>
+      <div class="form-group">
+        <label for="album">Album</label>
+        <input type="text" id="album" />
+      </div>
+      <div class="form-group">
+        <label for="release-date">Release Date</label>
+        <input type="text" id="release-date" placeholder="YYYY-MM-DD" />
+      </div>
+      <div class="form-group">
+        <label for="popularity">Popularity (0-100)</label>
+        <input type="number" id="popularity" min="0" max="100" />
+      </div>
+      <div class="form-group">
+        <label for="spotify-url">Spotify URL</label>
+        <input type="url" id="spotify-url" placeholder="https://..." />
+      </div>
+      <div class="form-group">
+        <label for="duration-min">Duration (minutes)</label>
+        <input type="number" step="0.01" id="duration-min" />
+      </div>
+      <div class="form-group">
+        <label for="genre">Genre</label>
+        <input type="text" id="genre" placeholder="Genre (optional)" />
+      </div>
+      <button type="submit" id="submit-btn">Save Track</button>
+      <button type="button" id="cancel-btn">Cancel</button>
+      <p id="message" role="alert" aria-live="polite"></p>
+    </form>
+  </section>
+  <section id="search-sort">
+    <input type="text" id="search-input" placeholder="Search by track or artist" />
+    <select id="sort-select" aria-label="Sort tracks">
+      <option value="popularity_desc">Popularity ↓</option>
+      <option value="popularity_asc">Popularity ↑</option>
+      <option value="release_desc">Release Date ↓</option>
+      <option value="release_asc">Release Date ↑</option>
+    </select>
+  </section>
+  <section id="list" aria-label="List of Spotify tracks">
+    <h2>Track List</h2>
+    <table aria-describedby="List of spotify tracks">
+      <thead>
+        <tr>
+          <th>ID</th><th>Track</th><th>Artist</th><th>Album</th><th>Release Date</th><th>Popularity</th><th>Spotify URL</th><th>Duration</th><th>Genre</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tracks-table-body"></tbody>
+    </table>
+    <div id="pagination" aria-label="Pagination Controls"></div>
+  </section>
+</main>
 
-    <!-- Table to display tracks -->
-    <div>
-      <h2>Track List</h2>
-      <table class="table table-striped" id="tracks-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Track Name</th>
-            <th>Artist</th>
-            <th>Album</th>
-            <th>Release Date</th>
-            <th>Popularity</th>
-            <th>Spotify URL</th>
-            <th>Duration (min)</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Tracks will be dynamically inserted here -->
-        </tbody>
-      </table>
-    </div>
-  </div>
+<script>
+  const form = document.getElementById('track-form');
+  const messageEl = document.getElementById('message');
+  const cancelBtn = document.getElementById('cancel-btn');
+  const tracksTableBody = document.getElementById('tracks-table-body');
+  const searchInput = document.getElementById('search-input');
+  const sortSelect = document.getElementById('sort-select');
+  const paginationDiv = document.getElementById('pagination');
 
-  <script>
-    const form = document.getElementById('track-form');
-    const messageDiv = document.getElementById('message');
-    const submitBtn = document.getElementById('submit-btn');
-    const tracksTableBody = document.querySelector('#tracks-table tbody');
-    let editingTrackId = null;
+  let currentPage = 1;
+  let totalPages = 1;
+  let currentSearch = '';
+  let currentSort = 'popularity_desc';
 
-    // Load all tracks and display
-    async function loadTracks() {
-      const res = await fetch('/api/tracks');
-      const tracks = await res.json();
-      tracksTableBody.innerHTML = '';
-      tracks.forEach(track => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${track.id}</td>
-          <td>${track.track_name}</td>
-          <td>${track.artist}</td>
-          <td>${track.album || ''}</td>
-          <td>${track.release_date || ''}</td>
-          <td>${track.popularity || ''}</td>
-          <td><a href="${track.spotify_url || '#'}" target="_blank">${track.spotify_url ? 'Link' : ''}</a></td>
-          <td>${track.duration_min || ''}</td>
-          <td>
-            <button class="btn btn-sm btn-warning edit-btn">Edit</button>
-            <button class="btn btn-sm btn-danger delete-btn">Delete</button>
-          </td>
-        `;
-        // Edit button
-        row.querySelector('.edit-btn').onclick = () => {
-          editingTrackId = track.id;
-          fillForm(track);
-        };
-        // Delete button
-        row.querySelector('.delete-btn').onclick = () => {
-          if (confirm(`Delete track "${track.track_name}"?`)) {
-            deleteTrack(track.id);
-          }
-        };
-        tracksTableBody.appendChild(row);
-      });
+  function showMessage(msg, isError = false) {
+    messageEl.textContent = msg;
+    messageEl.style.color = isError ? 'red' : '#14833b';
+  }
+
+  function clearForm() {
+    form.reset();
+    form['track-id'].value = '';
+    showMessage('');
+    submitBtn.textContent = 'Save Track';
+  }
+
+  async function fetchTracks(page = 1) {
+    currentPage = page;
+    const url = `/api/tracks?page=${page}&per_page=10&search=${encodeURIComponent(currentSearch)}&sort=${currentSort}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      showMessage('Failed to load tracks', true);
+      return;
     }
+    const data = await res.json();
+    totalPages = data.pages;
+    renderTracks(data.tracks);
+    renderPagination();
+  }
 
-    // Fill form for editing
-    function fillForm(track) {
-      document.getElementById('track-id').value = track.id;
-      document.getElementById('track-id').disabled = true;
-      document.getElementById('track-name').value = track.track_name;
-      document.getElementById('artist').value = track.artist;
-      document.getElementById('album').value = track.album || '';
-      document.getElementById('release-date').value = track.release_date || '';
-      document.getElementById('popularity').value = track.popularity || '';
-      document.getElementById('spotify-url').value = track.spotify_url || '';
-      document.getElementById('duration-min').value = track.duration_min || '';
-      submitBtn.textContent = 'Update Track';
-      messageDiv.textContent = '';
+  function renderTracks(tracks) {
+    tracksTableBody.innerHTML = '';
+    tracks.forEach(track => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${track.id}</td>
+        <td>${track.track_name}</td>
+        <td>${track.artist}</td>
+        <td>${track.album || ''}</td>
+        <td>${track.release_date || ''}</td>
+        <td>${track.popularity || ''}</td>
+        <td><a href="${track.spotify_url || '#'}" target="_blank" rel="noopener noreferrer">${track.spotify_url ? 'Link' : ''}</a></td>
+        <td>${track.duration_min ? track.duration_min.toFixed(2) : ''}</td>
+        <td>${track.genre || ''}</td>
+        <td>
+          <button class="btn btn-edit" onclick="editTrack('${track.id}')">Edit</button>
+          <button class="btn btn-delete" onclick="deleteTrack('${track.id}')">Delete</button>
+        </td>`;
+      tracksTableBody.appendChild(tr);
+    });
+  }
+
+  function renderPagination() {
+    paginationDiv.innerHTML = '';
+    for(let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement('button');
+      btn.textContent = i;
+      btn.disabled = i === currentPage;
+      btn.addEventListener('click', () => fetchTracks(i));
+      paginationDiv.appendChild(btn);
     }
+  }
 
-    // Clear form to add new track
-    function clearForm() {
-      form.reset();
-      document.getElementById('track-id').disabled = false;
-      editingTrackId = null;
-      submitBtn.textContent = 'Add Track';
-      messageDiv.textContent = '';
-    }
-
-    // Show message
-    function showMessage(msg, isError = false) {
-      messageDiv.textContent = msg;
-      messageDiv.style.color = isError ? 'red' : 'green';
-      setTimeout(() => messageDiv.textContent = '', 3000);
-    }
-
-    // Create or update track on form submit
-    form.onsubmit = async (e) => {
-      e.preventDefault();
-      const trackData = {
-        id: document.getElementById('track-id').value.trim(),
-        track_name: document.getElementById('track-name').value.trim(),
-        artist: document.getElementById('artist').value.trim(),
-        album: document.getElementById('album').value.trim(),
-        release_date: document.getElementById('release-date').value.trim(),
-        popularity: parseInt(document.getElementById('popularity').value) || 0,
-        spotify_url: document.getElementById('spotify-url').value.trim(),
-        duration_min: parseFloat(document.getElementById('duration-min').value) || 0
-      };
-
-      try {
-        let res;
-        if (editingTrackId) {
-          // Update
-          res = await fetch(`/api/tracks/${editingTrackId}`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(trackData)
-          });
-          if (!res.ok) throw await res.json();
-          showMessage('Track updated successfully.');
-        } else {
-          // Create
-          res = await fetch('/api/tracks', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(trackData)
-          });
-          if (!res.ok) {
-            const error = await res.json();
-            throw new Error(error.error || 'Failed to add track.');
-          }
-          showMessage('Track added successfully.');
-        }
-        clearForm();
-        loadTracks();
-      } catch (err) {
-        showMessage(err.message || 'Error occurred.', true);
-      }
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const id = form['track-id'].value.trim();
+    const data = {
+      id: id || undefined,
+      track_name: form['track-name'].value.trim(),
+      artist: form['artist'].value.trim(),
+      album: form['album'].value.trim(),
+      release_date: form['release-date'].value.trim(),
+      popularity: parseInt(form['popularity'].value) || 0,
+      spotify_url: form['spotify-url'].value.trim(),
+      duration_min: parseFloat(form['duration-min'].value) || 0,
+      genre: form['genre'].value.trim(),
     };
-
-    // Delete track by ID
-    async function deleteTrack(id) {
-      const res = await fetch(`/api/tracks/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        showMessage('Track deleted.');
-        if (editingTrackId === id) clearForm();
-        loadTracks();
-      } else {
-        showMessage('Failed to delete track.', true);
-      }
+    let url = '/api/tracks';
+    let method = 'POST';
+    if (id) {
+      url += `/${id}`;
+      method = 'PUT';
     }
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (res.ok) {
+      showMessage(`Track ${id ? 'updated' : 'added'} successfully`);
+      clearForm();
+      fetchTracks(currentPage);
+    } else {
+      const err = await res.json();
+      showMessage(err.error || 'An error occurred', true);
+    }
+  });
 
-    // Initial load
-    loadTracks();
-  </script>
+  cancelBtn.addEventListener('click', e => {
+    e.preventDefault();
+    clearForm();
+  });
+
+  async function editTrack(id) {
+    const res = await fetch(`/api/tracks?page=1&per_page=1000&search=&sort=popularity_desc`);
+    const data = await res.json();
+    const track = data.tracks.find(t => t.id === id);
+    if (!track) {
+      alert('Track not found');
+      return;
+    }
+    form['track-id'].value = track.id;
+    form['track-name'].value = track.track_name;
+    form['artist'].value = track.artist;
+    form['album'].value = track.album || '';
+    form['release-date'].value = track.release_date || '';
+    form['popularity'].value = track.popularity || '';
+    form['spotify-url'].value = track.spotify_url || '';
+    form['duration-min'].value = track.duration_min || '';
+    form['genre'].value = track.genre || '';
+    showMessage('Editing track: ' + track.track_name);
+  }
+
+  async function deleteTrack(id) {
+    if (!confirm('Are you sure you want to delete this track?')) return;
+    const res = await fetch(`/api/tracks/${id}`, { method: 'DELETE' });
+    if (res.status === 204) {
+      showMessage('Track deleted');
+      fetchTracks(currentPage);
+    } else {
+      showMessage('Failed to delete track', true);
+    }
+  }
+
+  searchInput.addEventListener('input', e => {
+    currentSearch = e.target.value.trim();
+    fetchTracks(1);
+  });
+
+  sortSelect.addEventListener('change', e => {
+    currentSort = e.target.value;
+    fetchTracks(1);
+  });
+
+  // Initial load
+  fetchTracks(1);
+</script>
 </body>
 </html>
