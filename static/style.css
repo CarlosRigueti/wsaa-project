@@ -1,0 +1,55 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background: #f8f9fa;
+  color: #333;
+}
+
+h1 {
+  color: #1DB954;
+}
+
+input[type="search"] {
+  padding: 8px;
+  width: 100%;
+  max-width: 400px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+th, td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+th {
+  background: #1DB954;
+  color: white;
+}
+
+button.like.liked {
+  color: #1DB954;
+}
+
+button.favorite.favorited {
+  color: #f44336;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-size: 18px;
+  margin-right: 10px;
+}
+
+
