@@ -1,116 +1,33 @@
-import uuid
-from flask import Flask, request, jsonify, render_template, redirect
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import func
-from marshmallow import Schema, fields, ValidationError
-import pandas as pd
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
+from flask import Flask, request, jsonify, render_template
+from models import db, Track
+from flask_migrate import Migrate
+import pandas as pd
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'sqlite:///spotify.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tracks.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = os.getenv('SECRET_KEY', 'dev_secret')
 
-db = SQLAlchemy(app)
+db.init_app(app)
+migrate = Migrate(app, db)  # Flask-Migrate setup
 
-playlist_tracks = db.Table('playlist_tracks',
-    db.Column('playlist_id', db.Integer, db.ForeignKey('playlists.id')),
-    db.Column('track_id', db.String, db.ForeignKey('spotify_tracks.id'))
-)
+CSV_PATH = 'spotify_top_1000_tracks.csv'
 
-class SpotifyTrack(db.Model):
-    __tablename__ = 'spotify_tracks'
-    id = db.Column(db.String, primary_key=True)
-    track_name = db.Column(db.String, nullable=False)
-    artist = db.Column(db.String, nullable=False)
-    album = db.Column(db.String)
-    release_date = db.Column(db.String)
-    popularity = db.Column(db.Integer)
-    spotify_url = db.Column(db.String)
-    duration_min = db.Column(db.Float)
-    genre = db.Column(db.String)
-    album_cover_url = db.Column(db.String)
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "track_name": self.track_name,
-            "artist": self.artist,
-            "album": self.album,
-            "release_date": self.release_date,
-            "popularity": self.popularity,
-            "spotify_url": self.spotify_url,
-            "duration_min": self.duration_min,
-            "genre": self.genre,
-            "album_cover_url": self.album_cover_url
-        }
-
-class Favorite(db.Model):
-    __tablename__ = 'favorites'
-    id = db.Column(db.Integer, primary_key=True)
-    user_identifier = db.Column(db.String, nullable=False)
-    track_id = db.Column(db.String, db.ForeignKey('spotify_tracks.id'), nullable=False)
-
-class Like(db.Model):
-    __tablename__ = 'likes'
-    id = db.Column(db.Integer, primary_key=True)
-    user_identifier = db.Column(db.String, nullable=False)
-    track_id = db.Column(db.String, db.ForeignKey('spotify_tracks.id'), nullable=False)
-
-class Playlist(db.Model):
-    __tablename__ = 'playlists'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
-    user_identifier = db.Column(db.String, nullable=False)
-    tracks = db.relationship('SpotifyTrack', secondary=playlist_tracks, backref='playlists')
-
-class Feedback(db.Model):
-    __tablename__ = 'feedbacks'
-    id = db.Column(db.Integer, primary_key=True)
-    user_identifier = db.Column(db.String, nullable=False)
-    track_id = db.Column(db.String, db.ForeignKey('spotify_tracks.id'), nullable=False)
-    rating = db.Column(db.Integer, nullable=False)
-    comment = db.Column(db.Text, nullable=False)
-
-class TrackSchema(Schema):
-    id = fields.String()
-    track_name = fields.String(required=True)
-    artist = fields.String(required=True)
-    album = fields.String()
-    release_date = fields.String()
-    popularity = fields.Integer()
-    spotify_url = fields.String()
-    duration_min = fields.Float()
-    genre = fields.String()
-    album_cover_url = fields.String()
-
-track_schema = TrackSchema()
-
-def import_csv_to_db():
-    if SpotifyTrack.query.first():
-        return
-    csv_path = os.path.join(os.getcwd(), 'spotify_top_1000_tracks.csv')
-    if not os.path.exists(csv_path):
-        return
-    df = pd.read_csv(csv_path)
-    for _, row in df.iterrows():
-        track = SpotifyTrack(
-            id=row['id'],
-            track_name=row['track_name'],
-            artist=row['artist'],
-            album=row.get('album', ''),
-            release_date=str(row.get('release_date', '')),
-            popularity=int(row.get('popularity', 0)),
-            spotify_url=row.get('spotify_url', ''),
-            duration_min=float(row.get('duration_min', 0)),
-            genre=row.get('genre', ''),
-            album_cover_url=row.get('album_cover_url', '')
-        )
-        db.session.add(track)
-    db.session.commit()
+def import_csv():
+    with app.app_context():
+        if Track.query.first() is None:  # Import only if table empty
+            print('Importing CSV into SQLite database...')
+            df = pd.read_csv(CSV_PATH)
+            for _, row in df.iterrows():
+                track = Track(
+                    track_name=row.get('track_name', 'Unknown'),
+                    artist_name=row.get('artist_name', 'Unknown'),
+                    album_name=row.get('album_name', '') if 'album_name' in row else '',
+                    preview_url=''  # Empty now, can be updated later
+                )
+                db.session.add(track)
+            db.session.commit()
+            print('CSV import completed.')
 
 @app.route('/')
 def index():
@@ -118,94 +35,66 @@ def index():
 
 @app.route('/api/tracks', methods=['GET'])
 def get_tracks():
-    query = SpotifyTrack.query
-    search = request.args.get('search')
-    genre = request.args.get('genre')
-    popularity = request.args.get('popularity')
-    release_year = request.args.get('release_year')
-    sort = request.args.get('sort', 'popularity_desc')
-
-    if search:
-        pattern = f"%{search.lower()}%"
-        query = query.filter(
-            func.lower(SpotifyTrack.track_name).like(pattern) |
-            func.lower(SpotifyTrack.artist).like(pattern)
-        )
-    if genre:
-        query = query.filter(SpotifyTrack.genre == genre)
-    if popularity:
-        try:
-            pop_val = int(popularity)
-            query = query.filter(SpotifyTrack.popularity >= pop_val)
-        except ValueError:
-            pass
-    if release_year:
-        query = query.filter(SpotifyTrack.release_date.startswith(str(release_year)))
-
-    if sort == 'popularity_asc':
-        query = query.order_by(SpotifyTrack.popularity.asc())
-    elif sort == 'release_desc':
-        query = query.order_by(SpotifyTrack.release_date.desc())
-    elif sort == 'release_asc':
-        query = query.order_by(SpotifyTrack.release_date.asc())
-    else:
-        query = query.order_by(SpotifyTrack.popularity.desc())
-
-    tracks = [t.to_dict() for t in query.all()]
-
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    pagination = Track.query.paginate(page=page, per_page=per_page, error_out=False)
+    tracks = [t.to_dict() for t in pagination.items]
     return jsonify({
-        "tracks": tracks,
-        "meta": {
-            "total": len(tracks),
-            "page": 1,
-            "pages": 1,
-            "per_page": len(tracks),
-            "has_next": False,
-            "has_prev": False
-        }
+        'tracks': tracks,
+        'total': pagination.total,
+        'pages': pagination.pages,
+        'page': pagination.page,
+        'per_page': pagination.per_page,
+        'has_next': pagination.has_next,
+        'has_prev': pagination.has_prev
     })
 
 @app.route('/api/tracks', methods=['POST'])
-def create_track():
-    try:
-        data = track_schema.load(request.json, partial=True)
-    except ValidationError as err:
-        return jsonify(err.messages), 400
-
-    if 'id' not in data or not data['id']:
-        data['id'] = str(uuid.uuid4())
-
-    if SpotifyTrack.query.get(data['id']):
-        return jsonify({"error": "Track with this ID already exists."}), 400
-
-    new_track = SpotifyTrack(**data)
-    db.session.add(new_track)
-    db.session.commit()
-    return jsonify(new_track.to_dict()), 201
-
-@app.route('/api/tracks/<track_id>', methods=['PUT'])
-def update_track(track_id):
-    track = SpotifyTrack.query.get_or_404(track_id)
+def add_track():
     data = request.json
-    for field in ['track_name', 'artist', 'album', 'release_date', 'popularity', 'spotify_url', 'duration_min', 'genre', 'album_cover_url']:
-        if field in data:
-            setattr(track, field, data[field])
+    track = Track(
+        track_name=data.get('track_name', 'Unknown'),
+        artist_name=data.get('artist_name', 'Unknown'),
+        album_name=data.get('album_name', ''),
+        preview_url=data.get('preview_url', '')
+    )
+    db.session.add(track)
     db.session.commit()
-    return jsonify(track.to_dict())
+    return jsonify({'message': 'Track added', 'id': track.id})
 
-@app.route('/api/tracks/<track_id>', methods=['DELETE'])
+@app.route('/api/tracks/<int:track_id>', methods=['PUT'])
+def update_track(track_id):
+    data = request.json
+    track = Track.query.get_or_404(track_id)
+    if 'track_name' in data:
+        track.track_name = data['track_name']
+    if 'artist_name' in data:
+        track.artist_name = data['artist_name']
+    if 'album_name' in data:
+        track.album_name = data['album_name']
+    if 'preview_url' in data:
+        track.preview_url = data['preview_url']
+    db.session.commit()
+    return jsonify({'message': 'Track updated'})
+
+@app.route('/api/tracks/<int:track_id>', methods=['DELETE'])
 def delete_track(track_id):
-    track = SpotifyTrack.query.get_or_404(track_id)
+    track = Track.query.get_or_404(track_id)
     db.session.delete(track)
     db.session.commit()
-    return '', 204
+    return jsonify({'message': 'Track deleted'})
 
-# -- Favorites, Likes, and others remain unchanged --
+@app.route('/api/tracks/<int:track_id>/rating', methods=['POST'])
+def rate_track(track_id):
+    data = request.json
+    emoji = data.get('emoji', '')
+    track = Track.query.get_or_404(track_id)
+    track.rating = emoji
+    db.session.commit()
+    return jsonify({'message': 'Rating updated'})
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        import_csv_to_db()
+        import_csv()
     app.run(debug=True)
-
-

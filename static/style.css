@@ -1,0 +1,129 @@
+body.music-theme {
+  background: #121212;
+  color: #e0e0e0;
+  font-family: 'Poppins', sans-serif;
+  min-height: 100vh;
+}
+
+.navbar-brand {
+  color: #1db954 !important;
+  user-select: none;
+}
+
+.table-responsive {
+  border-radius: 15px;
+}
+
+table#tracks-table {
+  border-collapse: separate !important;
+  border-spacing: 0 12px !important;
+}
+
+table#tracks-table thead tr th {
+  border: none !important;
+  background: #282828 !important;
+  color: #b3b3b3 !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1rem 1.5rem !important;
+}
+
+table#tracks-table tbody tr {
+  background: #181818;
+  border-radius: 12px;
+  transition: background-color 0.25s ease;
+}
+
+table#tracks-table tbody tr:hover {
+  background: #1db954;
+  color: black;
+}
+
+table#tracks-table tbody tr:hover td {
+  color: black;
+}
+
+table#tracks-table tbody td {
+  border: none !important;
+  vertical-align: middle;
+  padding: 1rem 1.5rem !important;
+}
+
+.form-control-dark {
+  background-color: #282828;
+  border: 1.5px solid #1db954;
+  color: white;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.form-control-dark:focus {
+  background-color: #282828;
+  border-color: #1ed760;
+  box-shadow: 0 0 8px #1ed760;
+  color: white;
+}
+
+.btn-success {
+  background-color: #1db954;
+  border: none;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 10px rgb(29 185 84 / 0.3);
+}
+
+.btn-success:hover,
+.btn-success:focus {
+  background-color: #1ed760;
+  box-shadow: 0 6px 15px rgb(30 215 96 / 0.6);
+  outline: none;
+}
+
+.emoji-btn {
+  cursor: pointer;
+  font-size: 28px;
+  margin-right: 10px;
+  user-select: none;
+  filter: grayscale(80%);
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.emoji-btn:hover {
+  filter: grayscale(0%);
+  transform: scale(1.35);
+}
+
+.rating {
+  font-size: 24px;
+  margin-left: 18px;
+  color: #1db954;
+  font-weight: 700;
+}
+
+.pagination .page-link {
+  background-color: #282828;
+  border-color: #1db954;
+  color: #1db954;
+  font-weight: 600;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.pagination .page-link:hover {
+  background-color: #1db954;
+  color: black;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #1ed760;
+  border-color: #1ed760;
+  color: black;
+  font-weight: 700;
+}
+
+.alert {
+  font-weight: 600;
+  color: black;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgb(0 0 0 / 0.2);
+}
+
